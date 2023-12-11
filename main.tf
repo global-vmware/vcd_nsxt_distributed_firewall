@@ -11,6 +11,7 @@ terraform {
 
 # Create the Datacenter Group data source
 data "vcd_vdc_group" "dcgroup" {
+  org             = var.vdc_org_name
   name            = var.vdc_group_name
 }
 
@@ -22,24 +23,28 @@ data "vcd_nsxt_edgegateway" "edge_gateway" {
 }
 
 data "vcd_nsxt_app_port_profile" "app_port_profiles" {
-  for_each = var.app_port_profiles
-  name  = each.key
-  scope = each.value
+  org       = var.vdc_org_name
+  for_each  = var.app_port_profiles
+  name      = each.key
+  scope     = each.value
 }
 
 data "vcd_nsxt_ip_set" "ip_sets" {
+  org             = var.vdc_org_name
   for_each        = toset(var.ip_set_names)
   edge_gateway_id = data.vcd_nsxt_edgegateway.edge_gateway.id
   name            = each.value
 }
 
 data "vcd_nsxt_dynamic_security_group" "dynamic_security_groups" {
+  org           = var.vdc_org_name
   for_each      = toset(var.dynamic_security_group_names)
   vdc_group_id  = data.vcd_vdc_group.dcgroup.id
   name          = each.value
 }
 
 data "vcd_nsxt_security_group" "security_groups" {
+  org             = var.vdc_org_name
   for_each        = toset(var.security_group_names)
   edge_gateway_id = data.vcd_nsxt_edgegateway.edge_gateway.id
   name            = each.value
@@ -55,7 +60,8 @@ locals {
 }
 
 resource "vcd_nsxt_distributed_firewall" "nsxt_dfw" {
-  vdc_group_id = data.vcd_vdc_group.dcgroup.id
+  org           = var.vdc_org_name
+  vdc_group_id  = data.vcd_vdc_group.dcgroup.id
 
   dynamic "rule" {
     for_each = var.rules
